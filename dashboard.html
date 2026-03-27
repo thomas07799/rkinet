@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Thomas · Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#070b14;--bg2:#0c1120;
+  --surface:rgba(15,25,50,0.85);--surface2:rgba(255,255,255,0.03);
+  --border:rgba(56,120,255,0.14);--border-hi:rgba(56,120,255,0.35);
+  --accent:#3b82f6;--accent2:#60a5fa;--glow:rgba(59,130,246,0.5);
+  --green:#10b981;--green-glow:rgba(16,185,129,0.4);
+  --red:#ef4444;--amber:#f59e0b;
+  --text:#cbd5e1;--text-hi:#e2e8f0;--muted:#475569;
+  --r:14px;--r-sm:8px;
+  --shadow:0 0 0 1px rgba(56,120,255,0.08),0 4px 24px rgba(0,0,0,0.5);
+  --shadow-hi:0 0 0 1px rgba(56,120,255,0.25),0 8px 40px rgba(59,130,246,0.1);
+  --topbar-bg:rgba(7,11,20,0.92);--sidebar-bg:rgba(7,11,20,0.6);
+  --grid:rgba(59,130,246,0.035);--bg-r1:rgba(59,130,246,0.1);--bg-r2:rgba(34,211,238,0.06);
+}
+:root.day{
+  --bg:#f0f4fb;--bg2:#e8eef8;
+  --surface:rgba(255,255,255,0.85);--surface2:rgba(255,255,255,0.65);
+  --border:rgba(37,99,235,0.13);--border-hi:rgba(37,99,235,0.32);
+  --accent:#2563eb;--accent2:#1d4ed8;--glow:rgba(37,99,235,0.2);
+  --green:#059669;--green-glow:rgba(5,150,105,0.3);--red:#dc2626;--amber:#d97706;
+  --text:#1e293b;--text-hi:#0f172a;--muted:#64748b;
+  --shadow:0 0 0 1px rgba(37,99,235,0.07),0 4px 20px rgba(37,99,235,0.06);
+  --shadow-hi:0 0 0 1px rgba(37,99,235,0.18),0 8px 36px rgba(37,99,235,0.1);
+  --topbar-bg:rgba(240,244,251,0.94);--sidebar-bg:rgba(232,238,248,0.75);
+  --grid:rgba(37,99,235,0.05);--bg-r1:rgba(147,197,253,0.18);--bg-r2:rgba(196,221,255,0.13);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);transition:background 0.6s,color 0.6s}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 1000px 600px at 15% -5%,var(--bg-r1) 0%,transparent 55%),radial-gradient(ellipse 700px 500px at 85% 105%,var(--bg-r2) 0%,transparent 55%);pointer-events:none;z-index:0;transition:background 0.6s}
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;display:grid;height:100vh;grid-template-rows:52px 1fr;overflow:hidden}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 1.25rem;border-bottom:1px solid var(--border);background:var(--topbar-bg);backdrop-filter:blur(20px);position:relative;z-index:10;transition:background 0.6s,border-color 0.6s}
+.logo{font-family:'Orbitron',monospace;font-size:0.75rem;font-weight:700;color:var(--accent2);letter-spacing:0.12em;display:flex;align-items:center;gap:0.5rem}
+.logo-dot{width:7px;height:7px;border-radius:50%;background:var(--accent2);box-shadow:0 0 10px var(--glow);animation:logoGlow 2s ease-in-out infinite}
+@keyframes logoGlow{0%,100%{box-shadow:0 0 6px var(--glow)}50%{box-shadow:0 0 16px var(--glow)}}
+.greeting-text{font-size:0.78rem;color:var(--text)}
+.greeting-text span{color:var(--accent2);font-weight:600}
+.clock{font-family:'Orbitron',monospace;font-size:1.2rem;font-weight:700;color:var(--accent2);letter-spacing:0.08em}
+:root:not(.day) .clock{text-shadow:0 0 20px var(--glow)}
+.sep{animation:blink 1s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.date-text{font-size:0.65rem;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase}
+.icon-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.9rem;transition:all 0.2s;color:var(--text);line-height:1}
+.icon-btn:hover{border-color:var(--border-hi);background:rgba(59,130,246,0.1)}
+
+/* MAIN */
+.main{display:grid;grid-template-columns:230px 1fr 290px;height:100%;overflow:hidden}
+.sidebar-left,.sidebar-right{overflow-y:auto;padding:0.875rem;display:flex;flex-direction:column;gap:0.625rem;background:var(--sidebar-bg);transition:background 0.6s}
+.sidebar-left{border-right:1px solid var(--border)}
+.sidebar-right{border-left:1px solid var(--border)}
+.center{overflow-y:auto;padding:0.875rem;display:flex;flex-direction:column;gap:0.875rem}
+
+/* PANEL */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:0.875rem;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:border-color 0.25s,box-shadow 0.25s,background 0.6s;animation:fadeUp 0.4s ease both}
+.panel:hover{border-color:var(--border-hi);box-shadow:var(--shadow-hi)}
+.panel::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--border-hi),transparent);opacity:0;transition:opacity 0.25s}
+.panel:hover::after{opacity:1}
+.panel-title{font-size:0.57rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent2);margin-bottom:0.7rem;display:flex;align-items:center;justify-content:space-between}
+.panel-title-left{display:flex;align-items:center;gap:0.4rem}
+.panel-title-left::before{content:'';width:3px;height:3px;border-radius:50%;background:var(--accent2);flex-shrink:0}
+:root:not(.day) .panel-title-left::before{box-shadow:0 0 6px var(--accent2)}
+
+/* LINKS */
+.lgt{font-size:0.54rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin:0.45rem 0 0.3rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border)}
+.lgt:first-child{margin-top:0}
+.lnk{display:flex;align-items:center;gap:0.55rem;padding:0.4rem 0.45rem;border-radius:var(--r-sm);text-decoration:none;color:var(--text);font-size:0.76rem;font-weight:500;transition:all 0.15s;border:1px solid transparent;margin-bottom:0.12rem}
+.lnk:hover{background:rgba(59,130,246,0.08);border-color:var(--border);transform:translateX(3px)}
+:root.day .lnk:hover{background:rgba(37,99,235,0.07)}
+.li{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.72rem;flex-shrink:0;border:1px solid var(--border)}
+.li.b{background:rgba(59,130,246,0.12)}.li.t{background:rgba(34,211,238,0.1)}.li.g{background:rgba(16,185,129,0.1)}.li.a{background:rgba(245,158,11,0.1)}.li.p{background:rgba(139,92,246,0.1)}.li.r{background:rgba(236,72,153,0.1)}
+.lt{flex:1;display:flex;flex-direction:column;gap:1px}
+.ls{font-size:0.6rem;color:var(--muted);font-weight:400}
+.sdot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.sdot.on{background:var(--green);animation:pulseOn 2.5s infinite}
+@keyframes pulseOn{0%,100%{box-shadow:0 0 4px var(--green-glow)}50%{box-shadow:0 0 9px var(--green-glow)}}
+.sdot.off{background:var(--red)}
+
+/* WEATHER */
+.wx-top{display:flex;align-items:flex-start;gap:0.75rem;margin-bottom:0.65rem}
+.wx-icon{font-size:2.6rem;line-height:1}
+:root:not(.day) .wx-icon{filter:drop-shadow(0 0 10px rgba(59,130,246,0.5))}
+.wx-temp{font-family:'Orbitron',monospace;font-size:2.2rem;font-weight:700;color:var(--text-hi);letter-spacing:-0.02em}
+.wx-desc{font-size:0.76rem;color:var(--muted);margin-top:0.1rem}
+.wx-loc{font-size:0.6rem;color:var(--muted);margin-top:0.1rem;letter-spacing:0.06em;text-transform:uppercase}
+.wx-stats{display:flex;gap:0.4rem;margin-bottom:0.65rem}
+.wx-stat{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:0.35rem 0.45rem;transition:background 0.6s}
+.wx-sl{font-size:0.56rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em}
+.wx-sv{font-size:0.78rem;font-weight:600;color:var(--accent2);margin-top:1px}
+.forecast{display:grid;grid-template-columns:repeat(7,1fr);gap:0.25rem}
+.fc-day{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:0.35rem 0.1rem;text-align:center;transition:all 0.15s}
+.fc-day:hover{border-color:var(--border-hi)}
+.fc-name{font-size:0.54rem;font-weight:700;color:var(--muted);text-transform:uppercase}
+.fc-icon{font-size:0.95rem;margin:0.2rem 0}
+.fc-hi{font-size:0.66rem;font-weight:600;color:var(--text)}
+.fc-lo{font-size:0.6rem;color:var(--muted)}
+
+/* NEWS */
+.news-item{padding:0.65rem 0;border-bottom:1px solid var(--border)}
+.news-item:first-child{padding-top:0}.news-item:last-child{border-bottom:none;padding-bottom:0}
+.ni-hdr{display:flex;gap:0.55rem;margin-bottom:0.3rem}
+.ni-num{font-family:'Orbitron',monospace;font-size:0.6rem;font-weight:700;color:var(--accent);opacity:0.4;min-width:18px;padding-top:1px}
+.ni-title{font-size:0.8rem;font-weight:600;color:var(--text-hi);line-height:1.35;flex:1}
+.ni-title a{color:inherit;text-decoration:none;transition:color 0.15s}
+.ni-title a:hover{color:var(--accent2)}
+.ni-sum{font-size:0.71rem;color:var(--muted);line-height:1.55;padding-left:1.45rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:0.25rem}
+.ni-meta{font-size:0.6rem;color:var(--muted);padding-left:1.45rem;display:flex;align-items:center;gap:0.35rem}
+.ni-tag{background:rgba(59,130,246,0.1);color:var(--accent2);font-size:0.54rem;font-weight:700;padding:0.1rem 0.3rem;border-radius:3px;letter-spacing:0.05em;text-transform:uppercase;border:1px solid rgba(59,130,246,0.18)}
+.ni-more{font-size:0.62rem;color:var(--accent2);text-decoration:none;padding-left:1.45rem;display:inline-block;margin-top:0.2rem;opacity:0.7}
+.ni-more:hover{opacity:1}
+
+/* CALENDAR */
+.cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.55rem}
+.cal-month{font-family:'Orbitron',monospace;font-size:0.68rem;font-weight:500;color:var(--accent2);letter-spacing:0.05em}
+.cal-nav{display:flex;gap:0.2rem}
+.cal-btn{width:20px;height:20px;border-radius:5px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:var(--muted);transition:all 0.15s}
+.cal-btn:hover{border-color:var(--border-hi);color:var(--accent2)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.cal-dow{font-size:0.52rem;font-weight:700;text-align:center;color:var(--muted);text-transform:uppercase;padding:0.18rem 0}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:5px;font-size:0.65rem;color:var(--text);cursor:pointer;transition:all 0.12s}
+.cal-day:hover{background:rgba(59,130,246,0.1);color:var(--accent2)}
+.cal-day.empty{cursor:default;pointer-events:none}
+.cal-day.today{background:var(--accent);color:#fff;font-weight:700}
+:root:not(.day) .cal-day.today{box-shadow:0 0 10px var(--glow)}
+
+/* STATS */
+.stat-row{display:flex;flex-direction:column;gap:0.25rem;margin-bottom:0.5rem}
+.stat-row:last-child{margin-bottom:0}
+.stat-lr{display:flex;justify-content:space-between}
+.stat-label{font-size:0.65rem;color:var(--text);font-weight:500}
+.stat-val{font-family:'Orbitron',monospace;font-size:0.65rem;color:var(--accent2)}
+.stat-bar{height:3px;background:rgba(128,128,128,0.12);border-radius:2px;overflow:hidden}
+.stat-fill{height:100%;border-radius:2px;transition:width 1s ease;background:linear-gradient(90deg,var(--accent),#22d3ee)}
+.stat-fill.warn{background:linear-gradient(90deg,var(--amber),var(--red))}
+
+/* UPTIME */
+.uptime-item{display:flex;align-items:center;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border)}
+.uptime-item:last-child{border-bottom:none}
+.uptime-name{font-size:0.69rem;color:var(--text);font-weight:500}
+.uptime-ping{font-size:0.6rem;color:var(--muted)}
+.uptime-badge{font-size:0.57rem;font-weight:700;padding:0.12rem 0.4rem;border-radius:3px;letter-spacing:0.06em;text-transform:uppercase}
+.uptime-badge.up{background:rgba(16,185,129,0.12);color:var(--green);border:1px solid rgba(16,185,129,0.2)}
+.uptime-badge.down{background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.2)}
+
+/* NOTES */
+.notes-area{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:0.5rem 0.65rem;color:var(--text);font-family:'Inter',sans-serif;font-size:0.75rem;resize:none;outline:none;line-height:1.6;transition:border-color 0.2s,background 0.6s}
+.notes-area:focus{border-color:var(--border-hi)}
+.notes-area::placeholder{color:var(--muted)}
+
+/* TODO */
+.todo-input-row{display:flex;gap:0.35rem;margin-bottom:0.5rem}
+.todo-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:0.35rem 0.55rem;color:var(--text);font-family:'Inter',sans-serif;font-size:0.73rem;outline:none;transition:border-color 0.2s,background 0.6s}
+.todo-input:focus{border-color:var(--border-hi)}
+.todo-input::placeholder{color:var(--muted)}
+.btn-add{background:rgba(59,130,246,0.12);border:1px solid var(--border-hi);color:var(--accent2);font-size:0.85rem;width:24px;height:24px;border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0}
+.btn-add:hover{background:rgba(59,130,246,0.25)}
+.todo-list{display:flex;flex-direction:column;gap:0.2rem}
+.todo-item{display:flex;align-items:center;gap:0.45rem;padding:0.3rem 0.45rem;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface2);cursor:pointer;transition:all 0.15s}
+.todo-item:hover{border-color:var(--border-hi)}
+.todo-item.done .todo-text{text-decoration:line-through;color:var(--muted)}
+.todo-check{width:13px;height:13px;border-radius:3px;border:1px solid var(--border-hi);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.55rem;transition:all 0.15s}
+.todo-item.done .todo-check{background:var(--green);border-color:var(--green);color:#fff}
+.todo-text{font-size:0.72rem;color:var(--text);flex:1}
+.todo-del{font-size:0.62rem;color:var(--muted);opacity:0;transition:opacity 0.15s;cursor:pointer;padding:0 0.15rem}
+.todo-item:hover .todo-del{opacity:1}
+
+/* SPOTIFY */
+.spotify-widget{display:flex;align-items:center;gap:0.75rem}
+.spotify-art{width:48px;height:48px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:1.4rem}
+.spotify-art img{width:100%;height:100%;object-fit:cover}
+.spotify-info{flex:1;min-width:0}
+.spotify-track{font-size:0.78rem;font-weight:600;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spotify-artist{font-size:0.68rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.spotify-progress{margin-top:6px;height:3px;background:rgba(128,128,128,0.12);border-radius:2px;overflow:hidden}
+.spotify-bar{height:100%;background:#1db954;border-radius:2px;transition:width 1s linear}
+.spotify-controls{display:flex;align-items:center;gap:0.5rem;margin-top:6px}
+.sp-btn{font-size:0.8rem;cursor:pointer;color:var(--muted);background:none;border:none;transition:color 0.15s;padding:0}
+.sp-btn:hover{color:#1db954}
+.sp-play{font-size:1rem;color:var(--text-hi)}
+.sp-play:hover{color:#1db954}
+
+/* FUEL */
+.fuel-item{display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border)}
+.fuel-item:last-child{border-bottom:none}
+.fuel-left{display:flex;flex-direction:column;gap:2px}
+.fuel-type{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)}
+.fuel-station{font-size:0.7rem;font-weight:500;color:var(--text)}
+.fuel-price{font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:700;color:var(--accent2)}
+.fuel-price.cheap{color:var(--green)}
+.fuel-dist{font-size:0.6rem;color:var(--muted)}
+
+/* CLAUDE */
+.claude-msgs{max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:0.5rem;margin-bottom:0.6rem}
+.claude-msgs:empty::before{content:'Stell mir eine Frage…';color:var(--muted);font-size:0.72rem;text-align:center;padding:0.75rem}
+.msg{padding:0.5rem 0.65rem;border-radius:10px;font-size:0.75rem;line-height:1.5;max-width:90%}
+.msg.user{background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.2);align-self:flex-end;color:var(--text-hi)}
+.msg.ai{background:var(--surface2);border:1px solid var(--border);align-self:flex-start;color:var(--text)}
+.msg.typing{color:var(--muted);font-style:italic}
+.claude-input-row{display:flex;gap:0.4rem}
+.claude-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:0.4rem 0.6rem;color:var(--text);font-family:'Inter',sans-serif;font-size:0.74rem;outline:none;transition:border-color 0.2s}
+.claude-input:focus{border-color:var(--border-hi)}
+.claude-input::placeholder{color:var(--muted)}
+.btn-send{background:rgba(59,130,246,0.15);border:1px solid var(--border-hi);color:var(--accent2);font-size:0.75rem;padding:0 0.65rem;border-radius:var(--r-sm);cursor:pointer;transition:all 0.15s;white-space:nowrap;font-weight:600}
+.btn-send:hover{background:rgba(59,130,246,0.28)}
+.btn-send:disabled{opacity:0.4;cursor:not-allowed}
+
+/* SETTINGS MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--bg2);border:1px solid var(--border-hi);border-radius:var(--r);padding:1.5rem;width:420px;max-width:90vw;box-shadow:0 0 0 1px rgba(56,120,255,0.2),0 24px 80px rgba(0,0,0,0.7);transform:translateY(10px);transition:transform 0.25s}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-title{font-family:'Orbitron',monospace;font-size:0.85rem;font-weight:700;color:var(--accent2);margin-bottom:1.25rem;letter-spacing:0.08em}
+.modal-section{margin-bottom:1rem}
+.modal-section-title{font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem}
+.modal-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:var(--r-sm);padding:0.5rem 0.75rem;color:var(--text);font-family:'Inter',sans-serif;font-size:0.78rem;outline:none;transition:border-color 0.2s;margin-bottom:0.4rem}
+.modal-input:focus{border-color:var(--border-hi)}
+.modal-input::placeholder{color:var(--muted)}
+.modal-hint{font-size:0.62rem;color:var(--muted);margin-bottom:0.75rem;line-height:1.5}
+.modal-hint a{color:var(--accent2);text-decoration:none}
+.modal-footer{display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1.25rem}
+.btn-modal{padding:0.45rem 1rem;border-radius:var(--r-sm);font-size:0.75rem;font-weight:600;cursor:pointer;transition:all 0.15s;letter-spacing:0.03em}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-cancel:hover{border-color:var(--border-hi);color:var(--text)}
+.btn-primary{background:rgba(59,130,246,0.2);border:1px solid var(--border-hi);color:var(--accent2)}
+.btn-primary:hover{background:rgba(59,130,246,0.35)}
+
+.loading{color:var(--muted);font-size:0.7rem;text-align:center;padding:0.75rem;letter-spacing:0.06em}
+.small-btn{font-size:0.58rem;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:4px;padding:0.1rem 0.35rem;cursor:pointer;transition:all 0.15s}
+.small-btn:hover{border-color:var(--border-hi);color:var(--accent2)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="logo"><div class="logo-dot"></div>CMD CENTER</div>
+    <div style="display:flex;align-items:center;gap:1.5rem">
+      <div class="greeting-text" id="greeting">…</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <div class="date-text" id="date-text"></div>
+      <div class="clock" id="clock">00<span class="sep">:</span>00<span class="sep">:</span>00</div>
+      <button class="icon-btn" id="theme-btn" onclick="toggleTheme()" title="Tag/Nacht">🌙</button>
+      <button class="icon-btn" onclick="openSettings()" title="Einstellungen">⚙️</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- LEFT -->
+    <div class="sidebar-left">
+      <div class="panel" style="animation-delay:0.05s">
+        <div class="panel-title"><div class="panel-title-left">Schnellzugriff</div></div>
+        <div class="lgt">Webseiten</div>
+        <a href="https://it-nova.tech" target="_blank" class="lnk"><div class="li b">🏢</div><div class="lt"><span>IT Nova</span><span class="ls">it-nova.tech</span></div><div class="sdot on"></div></a>
+        <a href="https://rsburger.de" target="_blank" class="lnk"><div class="li a">🍔</div><div class="lt"><span>rsBurger</span><span class="ls">rsburger.de</span></div><div class="sdot on"></div></a>
+        <a href="https://rkinet.de" target="_blank" class="lnk"><div class="li t">🌐</div><div class="lt"><span>rkinet.de</span><span class="ls">Infrastruktur</span></div><div class="sdot on"></div></a>
+        <div class="lgt">Infrastruktur</div>
+        <a href="https://docker.rkinet.de" target="_blank" class="lnk"><div class="li b">🐳</div><div class="lt"><span>Dockhand</span><span class="ls">Container</span></div><div class="sdot on"></div></a>
+        <a href="https://pls.rkinet.de" target="_blank" class="lnk"><div class="li g">📄</div><div class="lt"><span>Paperless</span><span class="ls">Dokumente</span></div><div class="sdot on"></div></a>
+        <a href="https://n8n.rkinet.de" target="_blank" class="lnk"><div class="li p">⚡</div><div class="lt"><span>n8n</span><span class="ls">Automatisierung</span></div><div class="sdot on"></div></a>
+        <a href="https://cdb.rkinet.de" target="_blank" class="lnk"><div class="li t">🗄️</div><div class="lt"><span>CouchDB</span><span class="ls">Obsidian Sync</span></div><div class="sdot on"></div></a>
+        <a href="https://mail.it-nova.tech" target="_blank" class="lnk"><div class="li r">✉️</div><div class="lt"><span>Mailcow</span><span class="ls">E-Mail</span></div><div class="sdot on"></div></a>
+      </div>
+
+      <div class="panel" style="animation-delay:0.1s">
+        <div class="panel-title"><div class="panel-title-left">Service Status</div></div>
+        <div class="uptime-item"><span class="uptime-name">Mailcow</span><span class="uptime-ping" id="ping-mail">–</span><span class="uptime-badge up">Online</span></div>
+        <div class="uptime-item"><span class="uptime-name">Paperless</span><span class="uptime-ping" id="ping-pls">–</span><span class="uptime-badge up">Online</span></div>
+        <div class="uptime-item"><span class="uptime-name">CouchDB</span><span class="uptime-ping" id="ping-cdb">–</span><span class="uptime-badge up">Online</span></div>
+        <div class="uptime-item"><span class="uptime-name">n8n</span><span class="uptime-ping" id="ping-n8n">–</span><span class="uptime-badge up">Online</span></div>
+        <div class="uptime-item"><span class="uptime-name">Dockhand</span><span class="uptime-ping" id="ping-dock">–</span><span class="uptime-badge up">Online</span></div>
+      </div>
+    </div>
+
+    <!-- CENTER -->
+    <div class="center">
+
+      <!-- WEATHER -->
+      <div class="panel" style="animation-delay:0.05s">
+        <div class="panel-title"><div class="panel-title-left">Wetter · Bernau bei Berlin</div></div>
+        <div id="wx-content"><div class="loading">Verbinde…</div></div>
+      </div>
+
+      <!-- SPOTIFY -->
+      <div class="panel" style="animation-delay:0.08s">
+        <div class="panel-title">
+          <div class="panel-title-left">Spotify</div>
+          <button class="small-btn" onclick="openSettings()">API Key</button>
+        </div>
+        <div id="spotify-content"><div class="loading">Spotify API Key in ⚙️ hinterlegen</div></div>
+      </div>
+
+      <!-- FUEL -->
+      <div class="panel" style="animation-delay:0.11s">
+        <div class="panel-title">
+          <div class="panel-title-left">Tankpreise · Bernau</div>
+          <button class="small-btn" onclick="openSettings()">API Key</button>
+        </div>
+        <div id="fuel-content"><div class="loading">Tankerkönig API Key in ⚙️ hinterlegen</div></div>
+      </div>
+
+      <!-- NEWS -->
+      <div class="panel" style="animation-delay:0.14s;flex:1">
+        <div class="panel-title"><div class="panel-title-left">IT-Newsfeed</div></div>
+        <div id="news-content"><div class="loading">Feed wird geladen…</div></div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div class="sidebar-right">
+
+      <!-- CALENDAR -->
+      <div class="panel" style="animation-delay:0.05s">
+        <div class="panel-title"><div class="panel-title-left">Kalender</div></div>
+        <div class="cal-hdr">
+          <div class="cal-month" id="cal-month"></div>
+          <div class="cal-nav">
+            <button class="cal-btn" onclick="changeMonth(-1)">‹</button>
+            <button class="cal-btn" onclick="changeMonth(1)">›</button>
+          </div>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+
+      <!-- STATS -->
+      <div class="panel" style="animation-delay:0.08s">
+        <div class="panel-title"><div class="panel-title-left">Homelab Ressourcen</div></div>
+        <div class="stat-row"><div class="stat-lr"><span class="stat-label">Proxmox CPU</span><span class="stat-val" id="cpu-val">–</span></div><div class="stat-bar"><div class="stat-fill" id="cpu-bar" style="width:0%"></div></div></div>
+        <div class="stat-row"><div class="stat-lr"><span class="stat-label">Proxmox RAM</span><span class="stat-val" id="ram-val">–</span></div><div class="stat-bar"><div class="stat-fill" id="ram-bar" style="width:0%"></div></div></div>
+        <div class="stat-row"><div class="stat-lr"><span class="stat-label">Storage</span><span class="stat-val" id="disk-val">–</span></div><div class="stat-bar"><div class="stat-fill" id="disk-bar" style="width:0%"></div></div></div>
+        <div class="stat-row"><div class="stat-lr"><span class="stat-label">Hetzner VPS</span><span class="stat-val" id="vps-val">–</span></div><div class="stat-bar"><div class="stat-fill" id="vps-bar" style="width:0%"></div></div></div>
+      </div>
+
+      <!-- CLAUDE -->
+      <div class="panel" style="animation-delay:0.11s;flex:1">
+        <div class="panel-title">
+          <div class="panel-title-left">Claude AI</div>
+          <button class="small-btn" onclick="openSettings()">API Key</button>
+        </div>
+        <div class="claude-msgs" id="claude-msgs"></div>
+        <div class="claude-input-row">
+          <input type="text" class="claude-input" id="claude-input" placeholder="Frage stellen…" onkeydown="if(event.key==='Enter')sendClaude()"/>
+          <button class="btn-send" id="claude-send" onclick="sendClaude()">Senden</button>
+        </div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="panel" style="animation-delay:0.14s">
+        <div class="panel-title"><div class="panel-title-left">Schnellnotiz</div><button class="small-btn" onclick="saveNote()">Speichern</button></div>
+        <textarea class="notes-area" id="notes-area" placeholder="Notiz schreiben…" rows="3"></textarea>
+      </div>
+
+      <!-- TODO -->
+      <div class="panel" style="animation-delay:0.17s">
+        <div class="panel-title"><div class="panel-title-left">To-Do</div></div>
+        <div class="todo-input-row">
+          <input type="text" class="todo-input" id="todo-input" placeholder="Aufgabe…" onkeydown="if(event.key==='Enter')addTodo()"/>
+          <button class="btn-add" onclick="addTodo()">+</button>
+        </div>
+        <div class="todo-list" id="todo-list"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeSettings()">
+  <div class="modal">
+    <div class="modal-title">⚙ Einstellungen</div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Anthropic · Claude AI</div>
+      <input type="password" class="modal-input" id="set-claude-key" placeholder="sk-ant-api03-…"/>
+      <div class="modal-hint">API Key unter <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> erstellen</div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Spotify</div>
+      <input type="password" class="modal-input" id="set-sp-client" placeholder="Client ID"/>
+      <input type="password" class="modal-input" id="set-sp-secret" placeholder="Client Secret"/>
+      <input type="text" class="modal-input" id="set-sp-refresh" placeholder="Refresh Token"/>
+      <div class="modal-hint">App unter <a href="https://developer.spotify.com/dashboard" target="_blank">developer.spotify.com</a> anlegen · Redirect URI: <code style="font-size:0.6rem;color:var(--accent2)">http://localhost</code></div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Tankerkönig API</div>
+      <input type="password" class="modal-input" id="set-tank-key" placeholder="API Key"/>
+      <div class="modal-hint">Kostenlos registrieren unter <a href="https://creativecommons.tankerkoenig.de" target="_blank">tankerkoenig.de</a></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-modal btn-cancel" onclick="closeSettings()">Abbrechen</button>
+      <button class="btn-modal btn-primary" onclick="saveSettings()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── KEYS (localStorage) ──────────────────────────────
+const K={
+  theme:'dash-theme',notes:'dash-notes',todos:'dash-todos',
+  claudeKey:'dash-claude-key',
+  spClient:'dash-sp-client',spSecret:'dash-sp-secret',spRefresh:'dash-sp-refresh',
+  tankKey:'dash-tank-key'
+};
+const get=k=>localStorage.getItem(k)||'';
+const set=(k,v)=>localStorage.setItem(k,v);
+
+// ── SETTINGS MODAL ───────────────────────────────────
+function openSettings(){
+  document.getElementById('set-claude-key').value=get(K.claudeKey);
+  document.getElementById('set-sp-client').value=get(K.spClient);
+  document.getElementById('set-sp-secret').value=get(K.spSecret);
+  document.getElementById('set-sp-refresh').value=get(K.spRefresh);
+  document.getElementById('set-tank-key').value=get(K.tankKey);
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeSettings(){document.getElementById('modal-overlay').classList.remove('open');}
+function saveSettings(){
+  set(K.claudeKey,document.getElementById('set-claude-key').value.trim());
+  set(K.spClient,document.getElementById('set-sp-client').value.trim());
+  set(K.spSecret,document.getElementById('set-sp-secret').value.trim());
+  set(K.spRefresh,document.getElementById('set-sp-refresh').value.trim());
+  set(K.tankKey,document.getElementById('set-tank-key').value.trim());
+  closeSettings();
+  loadSpotify();loadFuel();
+}
+
+// ── THEME ────────────────────────────────────────────
+function applyTheme(mode){
+  const root=document.documentElement;const btn=document.getElementById('theme-btn');
+  if(mode==='day'){root.classList.add('day');btn.textContent='🌙';}
+  else{root.classList.remove('day');btn.textContent='☀️';}
+  set(K.theme,mode);
+}
+function toggleTheme(){applyTheme(document.documentElement.classList.contains('day')?'night':'day');}
+(()=>{const s=get(K.theme);s?applyTheme(s):applyTheme(new Date().getHours()>=6&&new Date().getHours()<20?'day':'night');})();
+
+// ── CLOCK ────────────────────────────────────────────
+const greet={morning:['Guten Morgen','Moin','Schönen Morgen'],day:['Guten Tag','Ich hoffe, dir geht\'s gut','Na, alles fit?'],evening:['Guten Abend','Schönen Abend','Feierabend, Thomas']};
+function getGreet(){const h=new Date().getHours();const p=h>=5&&h<12?greet.morning:h<18?greet.day:greet.evening;return p[Math.floor(Math.random()*p.length)];}
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clock').innerHTML=`${String(n.getHours()).padStart(2,'0')}<span class="sep">:</span>${String(n.getMinutes()).padStart(2,'0')}<span class="sep">:</span>${String(n.getSeconds()).padStart(2,'0')}`;
+  const days=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+  const months=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  document.getElementById('date-text').textContent=`${days[n.getDay()]}, ${n.getDate()}. ${months[n.getMonth()]} ${n.getFullYear()}`;
+}
+document.getElementById('greeting').innerHTML=`${getGreet()}, <span>Thomas</span>`;
+updateClock();setInterval(updateClock,1000);
+
+// ── WEATHER ──────────────────────────────────────────
+async function loadWeather(){
+  try{
+    const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=52.68&longitude=13.59&current=temperature_2m,weathercode,windspeed_10m,relative_humidity_2m,apparent_temperature&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe%2FBerlin&forecast_days=7');
+    if(!r.ok)throw 0;const d=await r.json();
+    const ic={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',80:'🌦️',82:'⛈️',95:'⛈️'};
+    const ds={0:'Klar',1:'Überwiegend klar',2:'Teilweise bewölkt',3:'Bedeckt',45:'Nebel',51:'Nieselregen',61:'Leichter Regen',63:'Regen',65:'Starker Regen',80:'Schauer',95:'Gewitter'};
+    const cur=d.current,daily=d.daily,code=cur.weathercode;
+    const dn=['So','Mo','Di','Mi','Do','Fr','Sa'];
+    let fc='';for(let i=0;i<7;i++){const dt=new Date(daily.time[i]);fc+=`<div class="fc-day"><div class="fc-name">${i===0?'Heu':dn[dt.getDay()]}</div><div class="fc-icon">${ic[daily.weathercode[i]]||'🌡️'}</div><div class="fc-hi">${Math.round(daily.temperature_2m_max[i])}°</div><div class="fc-lo">${Math.round(daily.temperature_2m_min[i])}°</div></div>`;}
+    document.getElementById('wx-content').innerHTML=`<div class="wx-top"><div class="wx-icon">${ic[code]||'🌡️'}</div><div><div class="wx-temp">${Math.round(cur.temperature_2m)}°C</div><div class="wx-desc">${ds[code]||''} · Gefühlt ${Math.round(cur.apparent_temperature)}°</div><div class="wx-loc">Bernau bei Berlin</div></div></div><div class="wx-stats"><div class="wx-stat"><div class="wx-sl">Luftfeucht.</div><div class="wx-sv">${cur.relative_humidity_2m}%</div></div><div class="wx-stat"><div class="wx-sl">Wind</div><div class="wx-sv">${Math.round(cur.windspeed_10m)} km/h</div></div><div class="wx-stat"><div class="wx-sl">Min/Max</div><div class="wx-sv">${Math.round(daily.temperature_2m_min[0])}°/${Math.round(daily.temperature_2m_max[0])}°</div></div></div><div class="forecast">${fc}</div>`;
+  }catch(e){document.getElementById('wx-content').innerHTML='<div class="loading">Nicht verfügbar</div>';}
+}
+
+// ── SPOTIFY ──────────────────────────────────────────
+let spToken=null,spExpiry=0,spProgress=0,spDuration=1,spPlaying=false,spTimer=null;
+
+async function getSpToken(){
+  const client=get(K.spClient),secret=get(K.spSecret),refresh=get(K.spRefresh);
+  if(!client||!secret||!refresh)return null;
+  if(spToken&&Date.now()<spExpiry)return spToken;
+  try{
+    const r=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','Authorization':'Basic '+btoa(client+':'+secret)},body:'grant_type=refresh_token&refresh_token='+refresh});
+    const d=await r.json();
+    spToken=d.access_token;spExpiry=Date.now()+d.expires_in*1000;
+    return spToken;
+  }catch{return null;}
+}
+
+async function loadSpotify(){
+  const el=document.getElementById('spotify-content');
+  const token=await getSpToken();
+  if(!token){el.innerHTML='<div class="loading">Spotify API Key in ⚙️ hinterlegen</div>';return;}
+  try{
+    const r=await fetch('https://api.spotify.com/v1/me/player/currently-playing',{headers:{Authorization:'Bearer '+token}});
+    if(r.status===204){el.innerHTML='<div class="loading">Nichts läuft gerade…</div>';return;}
+    const d=await r.json();
+    if(!d||!d.item){el.innerHTML='<div class="loading">Nichts läuft gerade…</div>';return;}
+    const art=d.item.album.images[0]?.url;
+    spProgress=d.progress_ms;spDuration=d.item.duration_ms;spPlaying=d.is_playing;
+    const pct=Math.round(spProgress/spDuration*100);
+    el.innerHTML=`<div class="spotify-widget">
+      <div class="spotify-art">${art?`<img src="${art}" alt=""/>`:'🎵'}</div>
+      <div class="spotify-info">
+        <div class="spotify-track">${d.item.name}</div>
+        <div class="spotify-artist">${d.item.artists.map(a=>a.name).join(', ')}</div>
+        <div class="spotify-progress"><div class="spotify-bar" id="sp-bar" style="width:${pct}%"></div></div>
+        <div class="spotify-controls">
+          <button class="sp-btn" onclick="spControl('previous')">⏮</button>
+          <button class="sp-btn sp-play" onclick="spControl('${spPlaying?'pause':'play'}')">${spPlaying?'⏸':'▶'}</button>
+          <button class="sp-btn" onclick="spControl('next')">⏭</button>
+        </div>
+      </div>
+    </div>`;
+    if(spTimer)clearInterval(spTimer);
+    if(spPlaying){spTimer=setInterval(()=>{spProgress+=1000;const b=document.getElementById('sp-bar');if(b)b.style.width=Math.min(100,spProgress/spDuration*100)+'%';},1000);}
+  }catch(e){el.innerHTML='<div class="loading">Spotify Fehler</div>';}
+}
+
+async function spControl(action){
+  const token=await getSpToken();if(!token)return;
+  const ep=action==='pause'?'pause':action==='play'?'play':action==='next'?'next':action==='previous'?'previous':null;
+  if(!ep)return;
+  const method=(action==='next'||action==='previous')?'POST':(action==='pause'?'PUT':'PUT');
+  await fetch(`https://api.spotify.com/v1/me/player/${ep}`,{method,headers:{Authorization:'Bearer '+token}});
+  setTimeout(loadSpotify,500);
+}
+
+// ── FUEL ─────────────────────────────────────────────
+async function loadFuel(){
+  const el=document.getElementById('fuel-content');
+  const key=get(K.tankKey);
+  if(!key){el.innerHTML='<div class="loading">Tankerkönig API Key in ⚙️ hinterlegen</div>';return;}
+  try{
+    // Bernau bei Berlin: lat 52.6787, lng 13.5853, radius 5km
+    const url=`https://creativecommons.tankerkoenig.de/json/list.php?lat=52.6787&lng=13.5853&rad=5&sort=price&type=all&apikey=${key}`;
+    const r=await fetch(url);const d=await r.json();
+    if(!d.ok||!d.stations?.length)throw new Error('no data');
+    // find cheapest diesel and benzin
+    const diesel=d.stations.filter(s=>s.diesel!==null).sort((a,b)=>a.diesel-b.diesel)[0];
+    const benzin=d.stations.filter(s=>s.e5!==null).sort((a,b)=>a.e5-b.e5)[0];
+    el.innerHTML=`
+      <div class="fuel-item">
+        <div class="fuel-left">
+          <div class="fuel-type">Diesel</div>
+          <div class="fuel-station">${diesel.brand} · ${diesel.place}</div>
+          <div class="fuel-dist">${(diesel.dist).toFixed(1)} km entfernt</div>
+        </div>
+        <div class="fuel-price cheap">${diesel.diesel.toFixed(3)}€</div>
+      </div>
+      <div class="fuel-item">
+        <div class="fuel-left">
+          <div class="fuel-type">Benzin E5</div>
+          <div class="fuel-station">${benzin.brand} · ${benzin.place}</div>
+          <div class="fuel-dist">${(benzin.dist).toFixed(1)} km entfernt</div>
+        </div>
+        <div class="fuel-price cheap">${benzin.e5.toFixed(3)}€</div>
+      </div>`;
+  }catch(e){el.innerHTML='<div class="loading">Tankerdaten nicht verfügbar</div>';}
+}
+
+// ── NEWS ─────────────────────────────────────────────
+const NEWS_FEEDS=[
+  {url:'https://www.heise.de/rss/heise-atom.xml',name:'Heise'},
+  {url:'https://www.golem.de/rss',name:'Golem'},
+];
+const PROXY='https://api.allorigins.win/get?url=';
+
+async function fetchFeed(feedUrl,name){
+  const r=await fetch(PROXY+encodeURIComponent(feedUrl));
+  const j=await r.json();
+  const parser=new DOMParser();
+  const xml=parser.parseFromString(j.contents,'text/xml');
+  const items=[...xml.querySelectorAll('item,entry')];
+  return items.slice(0,8).map(item=>{
+    const gt=tag=>item.querySelector(tag)?.textContent||'';
+    const link=item.querySelector('link')?.getAttribute('href')||gt('link')||'';
+    const date=gt('pubDate')||gt('published')||gt('updated')||'';
+    const desc=gt('description')||gt('summary')||gt('content')||'';
+    return {title:gt('title'),link,date:new Date(date),desc,src:name};
+  });
+}
+
+async function loadNews(){
+  const el=document.getElementById('news-content');
+  try{
+    const results=await Promise.allSettled(NEWS_FEEDS.map(f=>fetchFeed(f.url,f.name)));
+    let arts=[];
+    results.forEach(r=>{if(r.status==='fulfilled')arts=arts.concat(r.value);});
+    arts=arts.filter(a=>a.title&&a.link).sort((a,b)=>b.date-a.date).slice(0,6);
+    if(!arts.length)throw 0;
+    const strip=h=>{const t=document.createElement('div');t.innerHTML=h||'';return t.textContent||''};
+    const ago=d=>{if(!d||isNaN(d))return'';const diff=Date.now()-d;const h=Math.floor(diff/3600000);const m=Math.floor(diff/60000);return h>=24?'vor '+Math.floor(h/24)+'d':h>0?'vor '+h+'h':'vor '+m+'m'};
+    el.innerHTML=arts.map((a,i)=>{
+      const sum=strip(a.desc).trim().substring(0,160);
+      return '<div class="news-item"><div class="ni-hdr"><div class="ni-num">'+String(i+1).padStart(2,'0')+'</div><div class="ni-title"><a href="'+a.link+'" target="_blank">'+a.title+'</a></div></div>'+(sum?'<div class="ni-sum">'+sum+(sum.length>=160?'…':'')+'</div>':'')+'<div class="ni-meta"><span>'+a.src+'</span><span>·</span><span>'+ago(a.date)+'</span><span class="ni-tag">IT</span></div><a href="'+a.link+'" target="_blank" class="ni-more">→ Weiterlesen</a></div>';
+    }).join('');
+  }catch(e){el.innerHTML='<div class="loading">Feed nicht verfügbar</div>';}
+}
+
+
+// ── CLAUDE AI ────────────────────────────────────────
+let claudeMsgs=[];
+function addMsg(role,text){
+  claudeMsgs.push({role,text});
+  const el=document.getElementById('claude-msgs');
+  el.innerHTML=claudeMsgs.map(m=>`<div class="msg ${m.role==='user'?'user':'ai'}">${m.text.replace(/\n/g,'<br>')}</div>`).join('');
+  el.scrollTop=el.scrollHeight;
+}
+async function sendClaude(){
+  const key=get(K.claudeKey);
+  if(!key){addMsg('ai','Bitte Claude API Key in ⚙️ hinterlegen.');return;}
+  const inp=document.getElementById('claude-input');const q=inp.value.trim();if(!q)return;
+  inp.value='';
+  const btn=document.getElementById('claude-send');btn.disabled=true;
+  addMsg('user',q);
+  const typingEl=document.createElement('div');typingEl.className='msg ai typing';typingEl.textContent='Antwortet…';
+  document.getElementById('claude-msgs').appendChild(typingEl);
+  try{
+    const history=claudeMsgs.slice(0,-0).filter(m=>m.role!=='typing').map(m=>({role:m.role==='user'?'user':'assistant',content:m.text}));
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:'Du bist ein hilfreicher Assistent auf Thomas Rosinskis persönlichem Dashboard. Antworte auf Deutsch, präzise und kurz.',messages:history})});
+    const data=await r.json();
+    typingEl.remove();
+    const reply=data.content?.[0]?.text||'Fehler bei der Antwort.';
+    addMsg('ai',reply);
+  }catch(e){typingEl.remove();addMsg('ai','Fehler: API nicht erreichbar.');}
+  btn.disabled=false;
+}
+
+// ── CALENDAR ─────────────────────────────────────────
+let calDate=new Date();
+function renderCalendar(){
+  const today=new Date();const y=calDate.getFullYear();const m=calDate.getMonth();
+  const months=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  document.getElementById('cal-month').textContent=`${months[m]} ${y}`;
+  const fd=(new Date(y,m,1).getDay()+6)%7;const dim=new Date(y,m+1,0).getDate();
+  let h=['Mo','Di','Mi','Do','Fr','Sa','So'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for(let i=0;i<fd;i++)h+=`<div class="cal-day empty"></div>`;
+  for(let d=1;d<=dim;d++){const t=d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();h+=`<div class="cal-day ${t?'today':''}">${d}</div>`;}
+  document.getElementById('cal-grid').innerHTML=h;
+}
+function changeMonth(dir){calDate.setMonth(calDate.getMonth()+dir);renderCalendar();}
+
+// ── STATS (simulated) ────────────────────────────────
+function updateStats(){
+  const s=(id,bar,v)=>{document.getElementById(id).textContent=v+'%';const el=document.getElementById(bar);el.style.width=v+'%';el.className='stat-fill'+(v>80?' warn':'');};
+  s('cpu-val','cpu-bar',Math.floor(Math.random()*25+8));
+  s('ram-val','ram-bar',Math.floor(Math.random()*15+55));
+  s('disk-val','disk-bar',Math.floor(Math.random()*5+42));
+  s('vps-val','vps-bar',Math.floor(Math.random()*18+5));
+  // fake ping
+  ['mail','pls','cdb','n8n','dock'].forEach(id=>{document.getElementById('ping-'+id).textContent=Math.floor(Math.random()*20+4)+'ms';});
+}
+
+// ── NOTES ────────────────────────────────────────────
+document.getElementById('notes-area').value=get(K.notes);
+function saveNote(){const v=document.getElementById('notes-area').value;set(K.notes,v);}
+
+// ── TODOS ────────────────────────────────────────────
+let todos=JSON.parse(localStorage.getItem(K.todos)||'[]');
+const saveTodos=()=>set(K.todos,JSON.stringify(todos));
+function renderTodos(){
+  const l=document.getElementById('todo-list');
+  if(!todos.length){l.innerHTML='<div style="font-size:0.65rem;color:var(--muted);text-align:center;padding:0.4rem">Keine Aufgaben</div>';return;}
+  l.innerHTML=todos.map((t,i)=>`<div class="todo-item ${t.done?'done':''}" onclick="toggleTodo(${i})"><div class="todo-check">${t.done?'✓':''}</div><div class="todo-text">${t.text}</div><div class="todo-del" onclick="event.stopPropagation();deleteTodo(${i})">✕</div></div>`).join('');
+}
+function addTodo(){const i=document.getElementById('todo-input');const v=i.value.trim();if(!v)return;todos.unshift({text:v,done:false});saveTodos();renderTodos();i.value='';}
+function toggleTodo(i){todos[i].done=!todos[i].done;saveTodos();renderTodos();}
+function deleteTodo(i){todos.splice(i,1);saveTodos();renderTodos();}
+
+// ── INIT ─────────────────────────────────────────────
+loadWeather();loadNews();loadSpotify();loadFuel();renderCalendar();
+updateStats();setInterval(updateStats,8000);
+setInterval(loadSpotify,30000);setInterval(loadFuel,600000);setInterval(loadNews,600000);
+renderTodos();
+</script>
+</body>
+</html>
